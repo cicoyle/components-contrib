@@ -32,6 +32,12 @@ type LLM struct {
 	logger logger.Logger
 }
 
+func New(logger logger.Logger) LLM {
+	return LLM{
+		logger: logger,
+	}
+}
+
 func (a *LLM) Converse(ctx context.Context, r *conversation.Request) (res *conversation.Response, err error) {
 	a.logger.Debugf("Calling LLM model: %s", a.model)
 	opts := getOptionsFromRequest(r, a.logger)
