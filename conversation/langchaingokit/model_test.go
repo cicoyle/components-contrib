@@ -139,6 +139,18 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "empty tool calls slice with tools - returns error",
+			choices: []*llms.ContentChoice{
+				{
+					Content:    "",
+					StopReason: "tool_calls",
+					ToolCalls:  []llms.ToolCall{},
+				},
+			},
+			tools:   &tools,
+			wantErr: true,
+		},
+		{
 			name:      "empty choices slice with tools - returns error (model returned nothing)",
 			choices:   []*llms.ContentChoice{},
 			tools:     &tools,
@@ -166,7 +178,9 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 			resp, err := llm.Converse(t.Context(), req)
 			if tt.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errSubstr)
+				if tt.errSubstr != "" {
+					assert.Contains(t, err.Error(), tt.errSubstr)
+				}
 				assert.Nil(t, resp)
 			} else {
 				require.NoError(t, err)

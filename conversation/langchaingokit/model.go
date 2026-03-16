@@ -63,7 +63,8 @@ func (a *LLM) Converse(ctx context.Context, r *conversation.Request) (res *conve
 		hasUsefulResponse := false
 		for _, output := range outputs {
 			for _, choice := range output.Choices {
-				if choice.Message.Content != "" || choice.Message.ToolCallRequest != nil {
+				if choice.Message.Content != "" ||
+					(choice.Message.ToolCallRequest != nil && len(*choice.Message.ToolCallRequest) > 0) {
 					hasUsefulResponse = true
 					break
 				}
