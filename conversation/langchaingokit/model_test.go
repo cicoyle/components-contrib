@@ -46,9 +46,11 @@ func newLLMWithStub(fn func(ctx context.Context, messages []llms.MessageContent,
 	}
 }
 
-// TestConverseEmptyResponseWithTools verifies that when tools are provided and the LLM returns
-// an empty response (no content, no tool calls), Converse returns an error. This ensures the
-// resiliency runner in dapr/dapr can retry rather than silently completing the workflow.
+func strPtr(s string) *string { return &s }
+
+// TestConverseEmptyResponseWithTools verifies that when tool_choice=required is set and the LLM
+// returns an empty response (no content, no tool calls), Converse returns an error. This ensures
+// the resiliency runner in dapr/dapr can retry rather than silently completing the workflow.
 func TestConverseEmptyResponseWithTools(t *testing.T) {
 	tools := []llms.Tool{
 		{
@@ -61,30 +63,33 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		choices   []*llms.ContentChoice
-		tools     *[]llms.Tool
-		wantErr   bool
-		errSubstr string
+		name        string
+		choices     []*llms.ContentChoice
+		tools       *[]llms.Tool
+		toolChoice  *string
+		wantErr     bool
+		errSubstr   string
 	}{
 		{
-			name: "empty content no tool calls with tools provided - returns error",
+			name: "empty content no tool calls with tools provided and tool_choice=required - returns error",
 			choices: []*llms.ContentChoice{
 				{Content: "", StopReason: "stop"},
 			},
-			tools:     &tools,
-			wantErr:   true,
-			errSubstr: "LLM returned empty response with no tool calls",
+			tools:      &tools,
+			toolChoice: strPtr("required"),
+			wantErr:    true,
+			errSubstr:  "LLM returned empty response with no tool calls",
 		},
 		{
-			name: "multiple choices all empty with tools provided - returns error",
+			name: "multiple choices all empty with tools provided and tool_choice=required - returns error",
 			choices: []*llms.ContentChoice{
 				{Content: "", StopReason: "stop"},
 				{Content: "", StopReason: "stop"},
 			},
-			tools:     &tools,
-			wantErr:   true,
-			errSubstr: "LLM returned empty response with no tool calls",
+			tools:      &tools,
+			toolChoice: strPtr("required"),
+			wantErr:    true,
+			errSubstr:  "LLM returned empty response with no tool calls",
 		},
 		{
 			name: "empty content no tool calls without tools - no error",
@@ -139,7 +144,7 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "empty tool calls slice with tools - returns error",
+			name: "empty tool calls slice with tool_choice=required - returns error",
 			choices: []*llms.ContentChoice{
 				{
 					Content:    "",
@@ -147,15 +152,17 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 					ToolCalls:  []llms.ToolCall{},
 				},
 			},
-			tools:   &tools,
-			wantErr: true,
+			tools:      &tools,
+			toolChoice: strPtr("required"),
+			wantErr:    true,
 		},
 		{
-			name:      "empty choices slice with tools - returns error (model returned nothing)",
-			choices:   []*llms.ContentChoice{},
-			tools:     &tools,
-			wantErr:   true,
-			errSubstr: "LLM returned empty response with no tool calls",
+			name:       "empty choices slice with tool_choice=required - returns error (model returned nothing)",
+			choices:    []*llms.ContentChoice{},
+			tools:      &tools,
+			toolChoice: strPtr("required"),
+			wantErr:    true,
+			errSubstr:  "LLM returned empty response with no tool calls",
 		},
 	}
 
@@ -172,7 +179,8 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 						Parts: []llms.ContentPart{llms.TextContent{Text: "identify at-risk orders"}},
 					},
 				},
-				Tools: tt.tools,
+				Tools:      tt.tools,
+				ToolChoice: tt.toolChoice,
 			}
 
 			resp, err := llm.Converse(t.Context(), req)
