@@ -39,7 +39,6 @@ func New(logger logger.Logger) LLM {
 }
 
 func (a *LLM) Converse(ctx context.Context, r *conversation.Request) (res *conversation.Response, err error) {
-	a.logger.Debugf("Calling LLM model: %s", a.model)
 	opts := getOptionsFromRequest(r, a.logger)
 
 	var messages []llms.MessageContent
