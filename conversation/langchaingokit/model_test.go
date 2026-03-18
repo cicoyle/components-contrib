@@ -63,12 +63,12 @@ func TestConverseEmptyResponseWithTools(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		choices     []*llms.ContentChoice
-		tools       *[]llms.Tool
-		toolChoice  *string
-		wantErr     bool
-		errSubstr   string
+		name       string
+		choices    []*llms.ContentChoice
+		tools      *[]llms.Tool
+		toolChoice *string
+		wantErr    bool
+		errSubstr  string
 	}{
 		{
 			name: "empty content no tool calls with tools provided and tool_choice=required - returns error",
