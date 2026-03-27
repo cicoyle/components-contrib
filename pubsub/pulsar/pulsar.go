@@ -204,6 +204,21 @@ func parsePulsarMetadata(meta pubsub.Metadata) (*pulsarMetadata, error) {
 		return nil, errors.New("invalid subscription mode")
 	}
 
+	// Normalize and validate processMode.
+	m.ProcessMode = strings.ToLower(m.ProcessMode)
+	switch m.ProcessMode {
+	case processModeSync, processModeAsync, "":
+		// valid
+	default:
+		return nil, fmt.Errorf("invalid processMode %q: accepted values are %q and %q", m.ProcessMode, processModeAsync, processModeSync)
+	}
+
+	// Guard against zero MaxConcurrentHandlers: a zero-size work channel with no
+	// workers would block the dispatch loop immediately.
+	if m.MaxConcurrentHandlers == 0 {
+		m.MaxConcurrentHandlers = defaultConcurrency
+	}
+
 	// First pass: collect per-topic rawSchema flags.
 	rawSchemaTopics := make(map[string]bool)
 	for k, v := range meta.Properties {
